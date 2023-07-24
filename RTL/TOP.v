@@ -26,6 +26,7 @@ wire       clean_time_format;
 wire       clean_set;
 wire       clean_wake;
 
+
 // Counters Internal Signals
 wire [7:0] clk_sec;
 wire [7:0] clk_min;
@@ -52,6 +53,10 @@ wire       en_disp_comp;
 
 // Syncronizers
 // Register time_format output for CDC
+
+wire        rst_n_domain_1;
+wire        rst_n_domain_2;
+
 wire        en_disp_async;
 wire        err_disp_sync;
 
@@ -82,7 +87,7 @@ wire [7:0] mux_hr;
   
 DEB_CHK_1KHz timer_mode0 (
 	.CLK(i_clk_dig), // 1KHz
-	.rst_n(i_rst_n),
+	.rst_n(rst_n_domain_1),
 	.en(en_deb_chk),
 	.i_btn(i_timer_mode[0]),
 	.o_btn(clean_timer_mode[0])
@@ -90,7 +95,7 @@ DEB_CHK_1KHz timer_mode0 (
 
 DEB_CHK_1KHz timer_mode1 (
 	.CLK(i_clk_dig), // 1KHz
-	.rst_n(i_rst_n),
+	.rst_n(rst_n_domain_1),
 	.en(en_deb_chk),
 	.i_btn(i_timer_mode[1]),
 	.o_btn(clean_timer_mode[1])
@@ -98,7 +103,7 @@ DEB_CHK_1KHz timer_mode1 (
 
 DEB_CHK_1KHz time_format (
 	.CLK(i_clk_dig), // 1KHz
-	.rst_n(i_rst_n),
+	.rst_n(rst_n_domain_1),
 	.en(en_deb_chk),
 	.i_btn(i_time_format),
 	.o_btn(clean_time_format)
@@ -106,7 +111,7 @@ DEB_CHK_1KHz time_format (
 
 DEB_CHK_1KHz set (
 	.CLK(i_clk_dig), // 1KHz
-	.rst_n(i_rst_n),
+	.rst_n(rst_n_domain_1),
 	.en(en_deb_chk),
 	.i_btn(i_set),
 	.o_btn(clean_set)
@@ -114,7 +119,7 @@ DEB_CHK_1KHz set (
 
 DEB_CHK_1KHz wake (
 	.CLK(i_clk_dig), // 1KHz
-	.rst_n(i_rst_n),
+	.rst_n(rst_n_domain_1),
 	.en(en_deb_chk),
 	.i_btn(i_wake),
 	.o_btn(clean_wake)
@@ -122,7 +127,7 @@ DEB_CHK_1KHz wake (
 
 DEB_CHK_3KHz timer_mode0_mux_sel (
 	.CLK(i_clk_disp), // 3KHz
-	.rst_n(i_rst_n),
+	.rst_n(rst_n_domain_2),
 	.en(en_deb_chk),
 	.i_btn(i_timer_mode[0]),
 	.o_btn(clean_timer_mode_mux_sel[0])
@@ -130,7 +135,7 @@ DEB_CHK_3KHz timer_mode0_mux_sel (
 
 DEB_CHK_3KHz timer_mode1_mux_sel (
 	.CLK(i_clk_disp), // 3KHz
-	.rst_n(i_rst_n),
+	.rst_n(rst_n_domain_2),
 	.en(en_deb_chk),
 	.i_btn(i_timer_mode[1]),
 	.o_btn(clean_timer_mode_mux_sel[1])
@@ -139,14 +144,14 @@ DEB_CHK_3KHz timer_mode1_mux_sel (
 // Pulse Stretch
 Pulse_Stretch err_disp (
 	.CLK(i_clk_disp),
-	.rst_n(i_rst_n),
+	.rst_n(rst_n_domain_2),
 	.Async(i_err_disp),
 	.pulse(err_disp_sync)
 );
 
 // FSM
 FSM fsm (
-	.rst_n(i_rst_n),
+	.rst_n(rst_n_domain_1),
 	.CLK(i_clk_dig), // 1KHz
 	.i_set(clean_set),
 	.i_wake(clean_wake),
@@ -166,14 +171,14 @@ FSM fsm (
 // Register enable display before sync
 DFF reg_en_disp (
 	.CLK(i_clk_dig),
-	.rst_n(i_rst_n),
+	.rst_n(rst_n_domain_1),
 	.D(en_disp_comp),
 	.Q(en_disp_async)
 );
 
 CLock DIG_CLK (
 	.CLK(i_clk_dig), // 1KHz
-	.rst_n(i_rst_n),
+	.rst_n(rst_n_domain_1),
 	.rst_counters(rst_counters),
 	.enc_sec(enc_dig_clk),
 	.en(en_dig_clk),
@@ -186,7 +191,7 @@ CLock DIG_CLK (
 
 Stop_Watch stp_watch (
 	.CLK(i_clk_dig), // 1KHz
-	.rst_n(i_rst_n),
+	.rst_n(rst_n_domain_1),
 	.en(en_stop_watch),
 	.rst_counters(rst_counters),
 	.Valid(Valid_stp_watch),
@@ -198,7 +203,7 @@ Stop_Watch stp_watch (
 
 Count_down cnt_down (
 	.CLK(i_clk_dig), // 1KHz
-	.rst_n(i_rst_n),
+	.rst_n(rst_n_domain_1),
 	.rst_counters(rst_counters),
 	.en(en_count_down),
 	.Valid(Valid_cnt_down),
@@ -209,16 +214,28 @@ Count_down cnt_down (
 );
 
 // Syncronizers
+RST_SYNC domain_1 (
+	.CLK(i_clk_dig),
+	.rst_n(i_rst_n),
+	.sync_rst_n(rst_n_domain_1)
+);
+
+RST_SYNC domain_2 (
+	.CLK(i_clk_disp),
+	.rst_n(i_rst_n),
+	.sync_rst_n(rst_n_domain_2)
+);
+
 BIT_SYNC valid_clk (
 	.CLK(i_clk_disp), // 3KHz
-	.rst_n(i_rst_n),
+	.rst_n(rst_n_domain_2),
 	.Async(Valid_clk),
 	.Sync(Valid_clk_sync)
 );
 
 BUS_SYNC bus_clk_sync (
 	.CLK(i_clk_disp), // 3KHz
-	.rst_n(i_rst_n),
+	.rst_n(rst_n_domain_2),
 	.EN(Valid_clk_sync),
 	.Async({clk_hr,clk_min,clk_sec}),
 	.Sync({clk_hr_sync,clk_min_sync,clk_sec_sync})
@@ -226,14 +243,14 @@ BUS_SYNC bus_clk_sync (
 
 BIT_SYNC valid_stp (
 	.CLK(i_clk_disp), // 3KHz
-	.rst_n(i_rst_n),
+	.rst_n(rst_n_domain_2),
 	.Async(Valid_stp_watch),
 	.Sync(Valid_stp_watch_sync)
 );
 
 BUS_SYNC bus_stp_watch_sync (
 	.CLK(i_clk_disp), // 3KHz
-	.rst_n(i_rst_n),
+	.rst_n(rst_n_domain_2),
 	.EN(Valid_stp_watch_sync),
 	.Async({stp_hr,stp_min,stp_sec}),
 	.Sync({stp_hr_sync,stp_min_sync,stp_sec_sync})
@@ -241,14 +258,14 @@ BUS_SYNC bus_stp_watch_sync (
 
 BIT_SYNC valid_cnt (
 	.CLK(i_clk_disp), // 3KHz
-	.rst_n(i_rst_n),
+	.rst_n(rst_n_domain_2),
 	.Async(Valid_cnt_down),
 	.Sync(Valid_cnt_down_sync)
 );
 
 BUS_SYNC bus_cnt_down_sync (
 	.CLK(i_clk_disp), // 3KHz
-	.rst_n(i_rst_n),
+	.rst_n(rst_n_domain_2),
 	.EN(Valid_cnt_down_sync),
 	.Async({cnt_hr,cnt_min,cnt_sec}),
 	.Sync({cnt_hr_sync,cnt_min_sync,cnt_sec_sync})
@@ -281,7 +298,7 @@ mux4X1 hr_sel (
 // Binary To BCD Convsersion
 Bin2BCD Binary2BCD (
 	.CLK(i_clk_disp), // 3KHz
-	.rst_n(i_rst_n),
+	.rst_n(rst_n_domain_2),
 	.Sec_bin(mux_sec),
 	.Min_bin(mux_min),
 	.Hr_bin(mux_hr),
@@ -295,7 +312,7 @@ Bin2BCD Binary2BCD (
 
 BIT_SYNC en_disp_sync (
 	.CLK(i_clk_disp), // 3KHz
-	.rst_n(i_rst_n),
+	.rst_n(rst_n_domain_2),
 	.Async(en_disp_async),
 	.Sync(o_en_disp)
 );
