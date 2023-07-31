@@ -18,8 +18,11 @@ reg [9:0] count_cycle;
 
 // Calculates 1-sec from 1KHz CLK
 always @(posedge CLK,negedge rst_n) begin
-	if (!rst_n || rst_counters) begin
+	if (!rst_n) begin
 		count_cycle <= 10'b0;
+	end
+	else if (rst_counters) begin
+	    count_cycle <= 10'b0;
 	end
     else if (count_cycle == 10'd999) begin
     	count_cycle <= 10'b0;
@@ -33,8 +36,15 @@ assign sec_minus_one = (count_cycle == 10'd999)? 1'b1:1'b0;
 
 // Decrement Mode
 always @(posedge CLK,negedge rst_n) begin
-	if (!rst_n || rst_counters) begin
+	if (!rst_n) begin
 		seconds <= 8'b0;
+		mins    <= 8'b0;
+		hrs     <= 8'b0;
+	end
+	else if (rst_counters) begin
+		seconds <= 8'b0;
+		mins    <= 8'b0;
+		hrs     <= 8'b0;
 	end
 	else if (sec_minus_one && seconds == 8'd0 && mins == 8'd0 && hrs != 8'd0) begin
 		seconds <= 8'd59;
@@ -48,38 +58,27 @@ always @(posedge CLK,negedge rst_n) begin
 	else if (sec_minus_one && seconds != 8'd0) begin
 		seconds <= seconds - 1'b1;
 	end
+
+	// Adjustment Mode
+	else if (hrs == 8'd23 && count_up_hr) begin
+		hrs     <= 8'd0;
+		mins    <= 8'd0;
+		seconds <= 8'd0;
+	end
+	else if (count_up_hr) begin
+		seconds <= 8'd0;
+		mins    <= 8'd0;
+		hrs     <= hrs + 1'b1;
+	end
+	else if (count_up_min) begin
+		seconds <= 8'd0;
+		mins    <= mins + 1'b1;
+	end
     else if (enc_sec && seconds == 8'd59) begin
     	seconds <= 8'd0;
     end
 	else if (enc_sec) begin
 		seconds <= seconds + 1'b1;
-    end
-end
-
-// Adjustment Mode
-// MINS
-always @(posedge CLK,negedge rst_n) begin
-	if (!rst_n || rst_counters) begin
-		mins <= 8'b0;
-	end
-	else if (mins == 8'd59 && count_up_min) begin
-		mins <= 8'b0;
-	end
-	else if (count_up_min) begin
-		mins <= mins + 1'b1;
-    end
-end
-
-// HRS_24
-always @(posedge CLK,negedge rst_n) begin
-	if (!rst_n || rst_counters) begin
-		hrs <= 8'b0;
-	end
-	else if (hrs == 8'd23 && count_up_hr) begin
-		hrs <= 8'b0;
-	end
-	else if (count_up_hr) begin
-		hrs <= hrs + 1'b1;
     end
 end
 

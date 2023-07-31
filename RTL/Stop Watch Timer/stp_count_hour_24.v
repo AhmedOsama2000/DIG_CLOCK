@@ -9,8 +9,11 @@ module stp_count_hr_24
 );
 
 always @(posedge CLK,negedge rst_n) begin
-	if (!rst_n || stop || rst_counters) begin
+	if (!rst_n) begin
 		hr_24 <= 8'b0;
+	end
+	else if (stop || rst_counters) begin
+	   hr_24  <= 8'b0;
 	end
 	else if (hr_24 == 8'd23 && count_up_hr) begin
 		hr_24 <= 8'b0;

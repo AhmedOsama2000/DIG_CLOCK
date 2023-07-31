@@ -14,9 +14,12 @@ reg [9:0] count_cycle;
 
 // Calculates 1-sec from 1KHz CLK
 always @(posedge CLK,negedge rst_n) begin
-	if (!rst_n || rst_counters) begin
+	if (!rst_n) begin
 		count_cycle <= 10'b0;
 	end
+	else if (rst_counters) begin
+	    count_cycle <= 10'b0;
+	end    
     else if (count_cycle == 10'd999) begin
     	count_cycle <= 10'b0;
     end
@@ -28,7 +31,10 @@ end
 assign sec_plus_one = (count_cycle == 10'd999)? 1'b1:1'b0;
 
 always @(posedge CLK,negedge rst_n) begin
-	if (!rst_n || rst_counters) begin
+	if (!rst_n) begin
+		seconds <= 8'b0;
+	end
+	else if (rst_counters) begin
 		seconds <= 8'b0;
 	end
     else if ((enc_sec || sec_plus_one) && seconds == 8'd59) begin

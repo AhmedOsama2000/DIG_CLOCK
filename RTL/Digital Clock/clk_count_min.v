@@ -9,9 +9,12 @@ module clk_count_min
 );
 
 always @(posedge CLK,negedge rst_n) begin
-	if (!rst_n || rst_counters) begin
+	if (!rst_n) begin
 		mins <= 8'b0;
 	end
+	else if (rst_counters) begin
+	    mins <= 8'b0;
+    end
 	else if (mins == 8'd59 && count_up_min) begin
 		mins <= 8'b0;
 	end
